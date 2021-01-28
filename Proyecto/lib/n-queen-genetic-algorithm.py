@@ -24,10 +24,10 @@ def fit_queen(n, queen_arr):
     hacia arriba—en la que se ubica la pieza en cuestión de la columna de la
     posición en el vector.
     """
-	l_diag = [0] * n - num_queen - 1
-	r_diag = [0] * num_queen - 1
-	for i in range(n):
-		l_diag[]
+    l_diag = r_diag = [0] * (2*n - 1)
+    for i in range(n):
+        l_diag[i + queen_arr[i]] += 1 
+        r_diag[n - i + queen_arr[i]] += 1
     suma = 0
     for i in range(1, 2 * n - 1):
         contador = 0
@@ -36,11 +36,56 @@ def fit_queen(n, queen_arr):
         if r_diag[i] > 1:
             contador += r_diag[i] - 1
         suma += contador / (n - abs(i - n))
-	return suma
+    return suma
+
+    
+def fit_queen_bondi(n, queen_arr):
+	queen_arr = np.array(queen_arr)
+	fitness = np.zeros(queen_arr.shape[0])
+	for i in range(len(queen_arr)):
+		r_arr = queen_arr[i + 1:]
+		l_arr = queen_arr[0:i]
+		if i < len(queen_arr):
+			for r in range(len(r_arr)):
+				# print(i, ' -- ', r_arr[r])
+				if r_arr[r] == queen_arr[i] + (r + 1) or r_arr[r] == queen_arr[i] - (r + 1):
+					fitness[r] += 1
+		if i > 0:
+			for l in range(len(l_arr)):
+				# print('l', i, ' -- ', l_arr[l])
+				if l_arr[l] == queen_arr[i] - (i - l) or l_arr[l] == queen_arr[i] + (i - l):
+					fitness[i] += 1
+	return np.sum(fitness) / (n * (n - 1))
 
 
- def mutacion(x):
-    """ Intercambia de forma aleatoria dos posiciones de un vector 
+def fit_queen_TONO(n, queen_arr):
+    """Permite verificar que, para una reina n dada, que no haya conflictos en
+    la diagonal. Devuelve el número de conflictos en las diagonales para la
+    solución propuesta; para una solución correcta, este valor será 0.
+    n -- número de reinas y tamaño del tablero
+    queen_arr -- arreglo que contiene la posición de las reinas para la solución
+    propuesta. El número en el vector se relaciona con la fila—contada de abajo
+    hacia arriba—en la que se ubica la pieza en cuestión de la columna de la
+    posición en el vector.
+    """
+    l_diag = [0] * (2*n - 1)
+    r_diag = [0] * (2*n - 1)
+    for i in range(n):
+        l_diag[i + queen_arr[i]] += 1
+        r_diag[n - i + queen_arr[i] - 1] += 1
+    suma = 0
+    for i in range(2 * n - 1):
+        contador = 0
+        if l_diag[i] > 1:
+            contador += l_diag[i] - 1
+        if r_diag[i] > 1:
+            contador += r_diag[i] - 1
+        suma += contador / (n - abs(i + 1 - n))
+    return suma
+
+def mutacion(x):
+    """ 
+    Intercambia de forma aleatoria dos posiciones de un vector 
     (una posible solución). Regresa la posible solucion mutada
     x -- posible solucion que sufrira mutacion
     """
@@ -48,10 +93,10 @@ def fit_queen(n, queen_arr):
     j = np.random.randint(0, len(x))
     while i == j:
         j = np.random.randin(0, len(x))
-    a = x[i]
-    b = x[j]
-    x[i] = b
-    x[j] = a
+        a = x[i]
+        b = x[j]
+        x[i] = b
+        x[j] = a
     return x
 
 
@@ -79,14 +124,6 @@ def reproduccion(x, y):
 
 def crossover():
     pass
-    
-
-def crear_poblacion(tam_pob, n):
-    """Genera de manera aleatoria el número de individuos indicados.
-    tam_pob -- indica el tamaño de población que se desea generar.
-    n -- tamaño del tablero en la métrica nxn, i.e. el tamaño del individuo
-    """
-    return np.random.rand(tam_pob, n)
 
 
 def evaluar_poblacion(pob):
@@ -94,7 +131,6 @@ def evaluar_poblacion(pob):
     pob -- población que contiene los individuos a evaluar.
     """
     pass
-   
 
 def principal(num_aux, num_iter, parallel = True):
     crear_poblacion()
@@ -123,6 +159,59 @@ def auxiliar(num_iter, pob_actual):
     return 1
 
 
+from multiprocessing import Process, Queue, Value
+class Master:
+    def __init__(self, population_size):
+        self.population_size = population_size
+        self.population = []
+        self.solution_queue = Queue() #Queue that will store solutions each slave finds
+
+    def create_initial_population(self):
+        """Genera de manera aleatoria el número de individuos indicados.
+        tam_pob -- indica el tamaño de población que se desea generar.
+        n -- tamaño del tablero en la métrica nxn, i.e. el tamaño del individuo
+        """
+        for i in range(self.population_size):
+            queen_tuple = np.arange(self.population_size)
+            np.random.shuffle(queen_tuple)
+            self.population.append(queen_tuple)
+        self.population = np.array(self.population)
+
+    def create_slaves(self):
+        pass
+
+    def find_solution(self):
+        solution_found = Value('d', 0.0)
+        self.create_initial_population()
+        print(self.population)
+        while solution_found.value != 1:
+            slave = Slave(solution_found, self.population)
+            proc = Process(target=slave.evaluate, args=())
+            proc.start()
+            proc.join()
+        print("finished")
+
+class Slave:
+    def __init__(self, found_solution, population, n_iter=10):
+        self.found_solution = found_solution
+        self.n_iter = n_iter
+        self.population = population
+
+    def fitness(self, individual):
+        return -1
+
+    def evaluate(self): 
+        for individual in self.population:
+            result = self.fitness(individual)
+            if result == -1:
+                self.found_solution.value = 1
+
 if __name__ == '__main__':
-    pass    
+    master = Master(5)
+    master.find_solution()
+    pob = [
+        [1,3,0,2], #bien
+        [3,0,2,1], #mal
+        [3,2,1,0]
+    ]
     
