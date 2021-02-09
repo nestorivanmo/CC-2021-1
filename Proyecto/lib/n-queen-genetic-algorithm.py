@@ -1,7 +1,8 @@
 import numpy as np
 import random
-from multiprocessing import Process
-# :TODO: implementar el algoritmo con Nuba
+from multiprocessing import Process, Queue, Value
+
+# TODO: implementar el algoritmo con Nuba
 
 """
 Representación del tablero:
@@ -82,6 +83,7 @@ def fit_queen_TONO(n, queen_arr):
             contador += r_diag[i] - 1
         suma += contador / (n - abs(i + 1 - n))
     return suma
+    
 
 def mutacion(x):
     """ 
@@ -157,14 +159,51 @@ def auxiliar(num_iter, pob_actual):
     if resultado:
         pass
     return 1
+    
+    
+def genetic_algorithm(tamano_tablero, n):
+    poblacion = poblacion_inicial_aleatoria(n, tamano_tablero)
+    while True:
+        print('Población: \n', poblacion)
+        elegidos = seleccion(poblacion, tamano_tablero)
+        if elegidos.shape[0] != 2:
+            solucion = elegidos
+            return solucion
+            break
+        else:
+            hijo = reproduccion(elegidos[0], elegidos[1])
+            hijo_mutado =    mutacion(hijo)
+            nueva_poblacion = np.insert(elegidos, len(elegidos), hijo_mutado, axis = 0)
+            nueva_poblacion = np.array(nueva_poblacion, dtype = np.int)
+            poblacion = nueva_poblacion
+            
+            
+def poblacion_inicial_aleatoria(n, tamano_tablero):
+    poblacion = np.zeros(shape = (n, tamano_tablero), dtype=np.int)
+    for i in range(n):
+        posiciones = np.arange(tamano_tablero, dtype = np.int)
+        np.random.shuffle(posiciones)
+        poblacion[i] = posiciones
+    return poblacion
+    
+    
+def seleccion(poblacion, tamano_tablero):
+    elegidos = np.zeros(shape = (2, tamano_tablero), dtype=np.int)
+    fitness = [(fit_queen_TONO(tamano_tablero, poblacion[i]), i) for i in range(poblacion.shape[0])]
+    fitness.sort()
+    elegidos[0] = poblacion[fitness[0][1]]
+    elegidos[1] = poblacion[fitness[1][1]]
+    if fitness[0][0] == 0:
+        return elegidos[0]
+    return elegidos
 
 
-from multiprocessing import Process, Queue, Value
 class Master:
     def __init__(self, population_size):
         self.population_size = population_size
         self.population = []
         self.solution_queue = Queue() #Queue that will store solutions each slave finds
+
 
     def create_initial_population(self):
         """Genera de manera aleatoria el número de individuos indicados.
@@ -177,8 +216,10 @@ class Master:
             self.population.append(queen_tuple)
         self.population = np.array(self.population)
 
+
     def create_slaves(self):
         pass
+
 
     def find_solution(self):
         solution_found = Value('d', 0.0)
@@ -191,20 +232,24 @@ class Master:
             proc.join()
         print("finished")
 
+
 class Slave:
     def __init__(self, found_solution, population, n_iter=10):
         self.found_solution = found_solution
         self.n_iter = n_iter
         self.population = population
 
+
     def fitness(self, individual):
         return -1
+
 
     def evaluate(self): 
         for individual in self.population:
             result = self.fitness(individual)
             if result == -1:
                 self.found_solution.value = 1
+                
 
 if __name__ == '__main__':
     master = Master(5)
@@ -214,4 +259,5 @@ if __name__ == '__main__':
         [3,0,2,1], #mal
         [3,2,1,0]
     ]
+    genetic_algorithm(15, 15)
     
