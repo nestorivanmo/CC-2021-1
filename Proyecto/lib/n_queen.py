@@ -1,7 +1,26 @@
-import time
+from time import time
 import numpy as np
 import random
 import copy
+import multiprocessing as mp
+
+def print_board(individual, black=True):
+    board_size = individual.shape[0]
+    if black:
+        unicode_symbol = '\u265B'
+    else:
+        unicode_symbol = '\u2655'
+    for i in range(1, board_size + 1):
+        string_row, division = '|', ' '
+        for j in range(board_size):
+            if individual[j] == board_size - i:
+                string_row += ' ' + unicode_symbol + ' |'
+            else:
+                string_row += '   |'
+            division += '+---'
+        division += '+'
+        print(division, '\n', string_row)
+    print(division, '\n\n')
 
 
 def initialize_population(num_queens, population_size):
@@ -19,7 +38,8 @@ def is_solution(individual):
     return False
 
 
-def sort_by_fitness(population, verbose=False):
+def sort_by_fitness(population):
+    start = time()
     fitness_values = [
         (fitness(individual), idx) for idx, individual in enumerate(population)
     ]
@@ -28,8 +48,8 @@ def sort_by_fitness(population, verbose=False):
         population[fit_val[1]] for fit_val in fitness_values
     ]
     individuals_by_fitness = np.array(individuals_by_fitness)
-    if verbose:
-        print(f"sort_by_fitness(): \n\t FV:\n\t{fitness_values} \n\t IBF:\n{individuals_by_fitness}", end="\n\n")
+    end = time()
+    print(f"sort_by_fitness(): {end - start}")
     return individuals_by_fitness
 
 
@@ -84,17 +104,6 @@ def replace_weakest_chromosomes(base_child, other_child):
             base_child[i], other_child[i] = other_child[i], base_child[i]
 
 
-def mutation(redundant_generation):
-    clean_generation = []
-    for index, individual in enumerate(redundant_generation):
-        if is_redundant(individual):
-            remove_redundancy(individual)
-        if index > redundant_generation.shape[0] // 2 or np.random.choice(2, 1, p=[0.3, 0.7]) == 0:
-            shuffle(individual)
-        clean_generation.append(individual)
-    return np.array(clean_generation)
-
-
 def shuffle(individual):
     bound = individual.shape[0] // 2
     left_side_index = random.randint(0, bound)
@@ -121,63 +130,111 @@ def remove_redundancy(individual):
             individual[idx] = missing_chromosomes.pop()
 
 
+def mutation(redundant_generation):
+    clean_generation = []
+    for index, individual in enumerate(redundant_generation):
+        if is_redundant(individual):
+            remove_redundancy(individual)
+        if index > redundant_generation.shape[0] // 2 or np.random.choice(2, 1, p=[0.3, 0.7]) == 0:
+            shuffle(individual)
+        clean_generation.append(individual)
+    return np.array(clean_generation)
+
+
 def find_next_generation(sorted_population):
+    start = time()
     redundant_generation = crossover(sorted_population)
+    end = time()
+    print(f"\tcrossover(): {end - start}")
+    start = time()
     next_generation = mutation(redundant_generation)
+    end = time()
+    print(f"\tmutation(): {end - start}")
     sorted_next_generation = sort_by_fitness(next_generation)
     return sorted_next_generation[:sorted_population.shape[0]]
 
-
-def print_board(individual, black=True):
-    board_size = individual.shape[0]
-    if black:
-        unicode_symbol = '\u265B'
-    else:
-        unicode_symbol = '\u2655'
-    for i in range(1, board_size + 1):
-        string_row, division = '|', ' '
-        for j in range(board_size):
-            if individual[j] == board_size - i:
-                string_row += ' ' + unicode_symbol + ' |'
-            else:
-                string_row += '   |'
-            division += '+---'
-        division += '+'
-        print(division, '\n', string_row)
-    print(division, '\n\n')
-
-
-def genetic_algorithm(num_queens, population_size, verbose=False):
+"""
+Sequential
+"""
+def genetic_algorithm(num_queens, population_size):
+    start = time()
     current_population = initialize_population(num_queens, population_size)
+    end = time()
+    print(f"initialize_population(): {end - start}")
+    sorted_population = sort_by_fitness(current_population)
     num_iterations = 0
     while True:
         num_iterations += 1
-        sorted_population = sort_by_fitness(current_population, verbose)
         fittest = sorted_population[0]
         if is_solution(fittest):
             return fittest, num_iterations
+        sorted_population = find_next_generation(sorted_population)
+
+"""
+Using Multiprocessing module
+"""
+def get_partial_populations(population, divisions):
+    return np.array(np.array_split(population, divisions))
+
+def slave(population, found_solution, show_board):
+    current_population = population
+    num_iterations = 0
+    while found_solution.value == 0:
+        num_iterations += 1
+        sorted_population = sort_by_fitness(current_population)
+        fittest = sorted_population[0]
+        if is_solution(fittest):
+            print(f"Process {mp.current_process().pid} found a solution: ")
+            print(fittest, num_iterations)
+            if show_board:
+                print_board(fittest)
+            found_solution.value = 1
         current_population = find_next_generation(sorted_population)
-        if verbose:
-            print_board(fittest)
-            # print(f"genetic_algorithm(queens={num_queens}, pop_size={population_size}):\n\t init_pop: \n{current_population}")
-            # print(sorted_population)
+    print(f"Process {mp.current_process().pid} ending")
+
+def master(num_queens, population_size, num_slaves=mp.cpu_count(), show_board=False):
+    inital_population = initialize_population(num_queens, population_size*num_slaves)
+    partial_populations = get_partial_populations(inital_population, num_slaves)
+    if partial_populations.shape[0] != num_slaves:
+        raise Exception(f"Wrong number of partial populations: ({partial_populations.shape[0]}) vs ({num_slaves})")
+    found_solution = mp.Value('i', 0)
+    slaves = []
+    for population in partial_populations:
+        p = mp.Process(target=slave, args=(population, found_solution, show_board, ))
+        p.start()
+        slaves.append(p)
+    for p in slaves:
+        p.join()
 
 
-pop_sizes = [5, 10, 15, 20, 30, 40, 60, 100]
-pop_sizes = [60, 100, 500]
-queens = [4, 5, 10, 15, 20, 25, 30, 40, 50, 100]
-queens = [100]
-num_queens = []
-for i in queens:
-    for j in pop_sizes:
-        times, total_iter = [], []
-        for k in range(10):
-            a = time.time()
-            solutions, iterations = genetic_algorithm(i, j)
-            b = time.time()
-            times.append(np.round(b-a, 3))
-            total_iter.append(iterations)
-        print_str = f'Reinas {i} población {j}  <- tiempo: {np.round(np.mean(times), 3)} <- iteraciones: {np.mean(total_iter)}\n'
-        with open("output.txt", "a") as text_file:
-            text_file.write(print_str)
-print(1)
+if __name__ == '__main__':
+    # pop_sizes = [5, 10, 15, 20, 30, 40, 60, 100]
+    # pop_sizes = [60, 100, 500]
+    # queens = [4, 5, 10, 15, 20, 25, 30, 40, 50, 100]
+    # queens = [100]
+    # num_queens = []
+    # for i in queens:
+    #     for j in pop_sizes:
+    #         times, total_iter = [], []
+    #         for k in range(10):
+    #             a = time.time()
+    #             solutions, iterations = genetic_algorithm(i, j)
+    #             b = time.time()
+    #             times.append(np.round(b-a, 3))
+    #             total_iter.append(iterations)
+    #         print_str = f'Reinas {i} población {j}  <- tiempo: {np.round(np.mean(times), 3)} <- iteraciones: {np.mean(total_iter)}\n'
+    #         with open("output.txt", "a") as text_file:
+    #             text_file.write(print_str)
+    # print(1)
+
+    #start = time()
+    #num_queens = 10
+    #population_size_per_slave = 20
+    #slaves = 4 #mp.cpu_count()
+    #master(num_queens, population_size_per_slave, slaves)
+    #end = time()
+    #print(f"Num_queens = {num_queens} Population_size = {population_size_per_slave * slaves} Time: {np.round(end-start,3)}")
+
+    sol, iterations = genetic_algorithm(8, 10)
+    print(sol)
+    print(iterations)
