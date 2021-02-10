@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import random
 import copy
@@ -72,7 +73,8 @@ def cross(first_parent, second_parent):
             f"Both parents should have the same chromosomes ({first_parent_size}) vs ({second_parent_size})")
     first_child = first_parent.copy()
     second_child = second_parent.copy()
-    replace_weakest_chromosomes(first_child, second_child)
+    replace_weakest_chromosomes(first_child, second_parent.copy())
+    replace_weakest_chromosomes(second_child, first_parent.copy())
     return first_child, second_child
 
 
@@ -84,9 +86,10 @@ def replace_weakest_chromosomes(base_child, other_child):
 
 def mutation(redundant_generation):
     clean_generation = []
-    for individual in redundant_generation:
+    for index, individual in enumerate(redundant_generation):
         if is_redundant(individual):
             remove_redundancy(individual)
+        if index > redundant_generation.shape[0] // 2 or np.random.choice(2, 1, p=[0.3, 0.7]) == 0:
             shuffle(individual)
         clean_generation.append(individual)
     return np.array(clean_generation)
@@ -151,13 +154,30 @@ def genetic_algorithm(num_queens, population_size, verbose=False):
         num_iterations += 1
         sorted_population = sort_by_fitness(current_population, verbose)
         fittest = sorted_population[0]
-        print_board(fittest)
         if is_solution(fittest):
             return fittest, num_iterations
         current_population = find_next_generation(sorted_population)
         if verbose:
-            print(f"genetic_algorithm(queens={num_queens}, pop_size={population_size}):\n\t init_pop: \n{current_population}")
-            print(sorted_population)
+            print_board(fittest)
+            # print(f"genetic_algorithm(queens={num_queens}, pop_size={population_size}):\n\t init_pop: \n{current_population}")
+            # print(sorted_population)
 
 
-print(genetic_algorithm(8, 10))
+pop_sizes = [5, 10, 15, 20, 30, 40, 60, 100]
+pop_sizes = [60, 100, 500]
+queens = [4, 5, 10, 15, 20, 25, 30, 40, 50, 100]
+queens = [100]
+num_queens = []
+for i in queens:
+    for j in pop_sizes:
+        times, total_iter = [], []
+        for k in range(10):
+            a = time.time()
+            solutions, iterations = genetic_algorithm(i, j)
+            b = time.time()
+            times.append(np.round(b-a, 3))
+            total_iter.append(iterations)
+        print_str = f'Reinas {i} población {j}  <- tiempo: {np.round(np.mean(times), 3)} <- iteraciones: {np.mean(total_iter)}\n'
+        with open("output.txt", "a") as text_file:
+            text_file.write(print_str)
+print(1)
