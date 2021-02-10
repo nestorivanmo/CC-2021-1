@@ -130,16 +130,42 @@ def remove_redundancy(individual):
             individual[idx] = missing_chromosomes.pop()
 
 
-def mutation(redundant_generation):
-    clean_generation = []
-    for index, individual in enumerate(redundant_generation):
-        if is_redundant(individual):
-            remove_redundancy(individual)
-        if index > redundant_generation.shape[0] // 2 or np.random.choice(2, 1, p=[0.3, 0.7]) == 0:
-            shuffle(individual)
-        clean_generation.append(individual)
+def remove_population_redundancy(population):
+    for individual in population:
+        remove_redundancy(individual)
+
+"""
+1. Obtener los hijos
+2. Dividir los hijos entre el número de procesos
+3. Cada proceso quita la redundancia de cada lista de hijos
+4. Sincronizar lista de hijos 
+5. Agregarlos a clean_generation
+6. Hacer mutación aleatoria sobre clean_generation
+"""
+def mutation(redundant_generation, num_processes=mp.cpu_count()):
+    parents = redundant_generation[:redundant_generation.shape[0]//2]
+    children = redundant_generation[redundant_generation.shape[0]//2:]
+    splitted_children = np.array(np.array_split(children, num_processes))
+    procs = []
+    for i in range(num_processes):
+        proc = mp.Process(target=remove_population_redundancy, args=(splitted_children[i],))
+        proc.start()
+        procs.append(proc)
+    for proc in procs:
+        proc.join()
+
+    parents_mutation(parents)
+    
     return np.array(clean_generation)
 
+def parents_mutation(parents):
+    for individual in parents:
+        if np.random.choice(2, 1, p=[0.3, 0.7]) == 0:
+            shuffle(individual)
+
+def offspring_mutation(offspring):
+    for individual in offspring:
+        shuffle(individual)
 
 def find_next_generation(sorted_population):
     start = time()
