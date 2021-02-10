@@ -1,4 +1,4 @@
-# # N-queen problem with genetic algorithms
+# N-queen problem with genetic algorithms
 
 
 import numpy as np
@@ -7,7 +7,7 @@ import multiprocessing as mp
 from time import time
 
 
-# ## Fitness function
+# Fitness function
 
 
 def fitness_function(n, individual):
@@ -27,14 +27,12 @@ def fitness_function(n, individual):
     return suma
 
 
-# In[3]:
-
-
 def fitness_function2(n, individual):
     max_pairs = n*(n-1)
     da = diagonal_attacks(individual)
     ha = horizontal_attacks(individual)
     return max_pairs - (da + ha)
+
 
 def diagonal_attacks(individual):
     n = len(individual)
@@ -57,6 +55,7 @@ def diagonal_attacks(individual):
     R = np.dot(r_diag, np.array(C))
     return L + R 
 
+
 def horizontal_attacks(individual):
     repeated_chromosomes = np.zeros(len(individual))
     for chromosome in individual:
@@ -74,7 +73,7 @@ def filter_(diag):
             diag[idx] = 0
 
 
-# ## Reproduction / Crossover
+# Reproduction / Crossover
 
 
 def reproduccion(x, y):
@@ -85,13 +84,14 @@ def reproduccion(x, y):
             hijo[i] = x[i]
         else:
           posiciones_libres.append(x[i])
-    np.random.shuffle(posiciones_libres) #Ordenamos de manera aleatoria las posiciones restantes
+    np.random.shuffle(posiciones_libres) # Ordenamos de manera aleatoria las posiciones restantes
     idx = 0
     for i in range(len(hijo)):
         if hijo[i] == -1: # Aquellas posiciones libres del hijo
             hijo[i] = posiciones_libres[idx]
             idx += 1
     return hijo
+
 
 def crossover(x, y, idx=None):
   if idx is None:
@@ -101,7 +101,7 @@ def crossover(x, y, idx=None):
   return new_x.tolist(), new_y.tolist()
 
 
-# ## Mutation
+# Mutation
 
 
 def mutacion(x):
@@ -115,12 +115,13 @@ def mutacion(x):
     x[j] = a
     return x
 
+
 def mutacion2(x):
   y = np.random.choice(range(len(x)), len(x), replace=False)
   return y
 
 
-# ## Selection
+# Selection
 
 
 def seleccion(poblacion, tamano_tablero, crossover=False):
@@ -130,7 +131,7 @@ def seleccion(poblacion, tamano_tablero, crossover=False):
              range(poblacion.shape[0])]
   fitness.sort()
   # fitness = fitness[::-1]
-  # print('Fitness:\n', fitness, '\n')
+  print('Fitness:\n', fitness, '\n')
   indices_padres = [i[1] for i in fitness[:mitad]]
   padres = []
   for indice in indices_padres:
@@ -174,7 +175,7 @@ def new_population_reproduction(poblacion, padres, fitness):
   return np.array(nueva_generacion)
 
 
-# ## Initial population
+# Initial population
 
 
 def poblacion_inicial_aleatoria(num_queens, population_size):
@@ -186,7 +187,7 @@ def poblacion_inicial_aleatoria(num_queens, population_size):
   return poblacion
 
 
-# ## Master
+# Master
 
 
 def genetic_algorithm(num_queens, population_size, crossover=False):
@@ -204,7 +205,7 @@ def genetic_algorithm(num_queens, population_size, crossover=False):
     poblacion = elegidos
 
 
-# # Multiprocessing
+# Multiprocessing
 
 
 def genetic_algorithm_mp(population, num_queens, bandera, crossover=False):
@@ -234,18 +235,7 @@ def master(num_queens, population_size, num_processes=4):
 
 
 if __name__ == '__main__':
-    tiempo_lineal, tiempo_concurrente = [], []
-    for i in range(10):
-        a = time()
-        master(15, 400, 4)
-        b = time()
-        tiempo_concurrente.append(b - a)
-    for i in range(10):
-        a = time()
-        genetic_algorithm(15, 100)
-        b = time()
-        tiempo_lineal.append(b - a)
-    print('Tiempo lineal:\n', tiempo_lineal, np.mean(tiempo_lineal), 'Tiempo concurrente:\n', tiempo_concurrente, np.mean(tiempo_concurrente))
+    genetic_algorithm(5, 10)
 
 
 
