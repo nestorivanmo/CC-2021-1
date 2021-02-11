@@ -7,6 +7,7 @@ from multiprocessing import Pipe
 
 
 def print_board(individual, black=True):
+    division = ""
     board_size = individual.shape[0]
     if black:
         unicode_symbol = '\u265B'
@@ -266,10 +267,11 @@ def genetic_algorithm_mp(num_queens, population_size, num_aux=mp.cpu_count(), sh
     return final_solution[0], final_solution[1], final_solution[2]
 
 
-def run_genetic_algorithm(num_queens, pop_sizes, runs=10, parallelize=False):
+def run_genetic_algorithm(num_queens, sizes, runs=10, parallelize=False):
     start_time = time()
+    file_name = ""
     for i in num_queens:
-        for j in pop_sizes:
+        for j in sizes:
             times, total_iter = [], []
             for k in range(runs):
                 if parallelize:
@@ -295,9 +297,16 @@ def run_genetic_algorithm(num_queens, pop_sizes, runs=10, parallelize=False):
 
 
 if __name__ == '__main__':
-    pop_sizes = [20, 30, 40, 60, 100, 400, 1000]
-    queens = [4, 5, 10, 15, 20, 25, 30, 40, 50, 100]
-    run_genetic_algorithm(queens, pop_sizes, parallelize=True)
+    # pop_sizes = [20, 30, 40, 60, 100, 400, 1000]
+    # queens = [4, 5, 10, 15, 20, 25, 30, 40, 50, 100]
+    # run_genetic_algorithm(queens, pop_sizes, parallelize=True)
+    n_queens = 25
+    population_size_per_process = 15
+    processes = mp.cpu_count()
+    start = time()
+    solutions, iterations, sol_process_id = genetic_algorithm_mp(n_queens, population_size_per_process, processes)
+    end = time()
+    print(solutions, iterations, end-start)
     # times = []
     # for i in range(10):
     #     start = time()
