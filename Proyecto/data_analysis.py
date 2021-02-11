@@ -108,6 +108,7 @@ def speedup(seq_df, con_df, seq_pop_sizes, con_pop_sizes):
     plt.title('Speedup con base en el número de reinas y tamaño de población')
     plt.savefig('graphs/speedup_seg.png')
     plt.show()
+    df.to_csv('data/output.csv')
     return 1
 
 
