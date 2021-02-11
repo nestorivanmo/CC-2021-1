@@ -121,12 +121,12 @@ def statistics(df=pd.read_csv('data/output.csv'), csv=False):
     stat_df['iter_avg_con'] = df.iter_avg_con.describe()
     stat_df['speedup'] = df.speedup.describe()
     stat_seg_df['num_queens'] = queens
-    queen_time_seq, queen_time_con, queen_iter_seq, queen_iter_con  = [], [], [], []
+    queen_time_seq, queen_time_con, queen_iter_seq, queen_iter_con = [], [], [], []
     for queen in queens:
-        queen_time_seq.append(np.average(df.tiempo_avg_seq[df.num_reinas == queen]))
-        queen_time_con.append(np.average(df.tiempo_avg_con[df.num_reinas == queen]))
-        queen_iter_seq.append(np.average(df.iter_avg_seq[df.num_reinas == queen]))
-        queen_iter_con.append(np.average(df.iter_avg_con[df.num_reinas == queen]))
+        queen_time_seq.append(np.round(np.average(df.tiempo_avg_seq[df.num_reinas == queen]), 3))
+        queen_time_con.append(np.round(np.average(df.tiempo_avg_con[df.num_reinas == queen]), 3))
+        queen_iter_seq.append(np.round(np.average(df.iter_avg_seq[df.num_reinas == queen]), 3))
+        queen_iter_con.append(np.round(np.average(df.iter_avg_con[df.num_reinas == queen]), 3))
     stat_seg_df['tiempo_seq'] = queen_time_seq
     stat_seg_df['tiempo_con'] = queen_time_con
     stat_seg_df['iter_seq'] = queen_iter_seq
@@ -136,6 +136,6 @@ def statistics(df=pd.read_csv('data/output.csv'), csv=False):
         stat_seg_df.to_csv('data/stat_seg.csv')
 
 
-graph(concurrent_df)
-speedup(sequential_df, concurrent_df, sequential_pop_sizes, concurrent_pop_sizes)
-statistics()
+# graph(concurrent_df)
+# speedup(sequential_df, concurrent_df, sequential_pop_sizes, concurrent_pop_sizes)
+statistics(csv=True)
