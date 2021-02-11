@@ -51,12 +51,11 @@ def print_board(individual, black=True):
         Parámetro para indicar el color de las reinas. Si es False, las reinas se pintarán de color blanco.
     :return: None
     """
-    division = ""
     board_size = individual.shape[0]
     if black:
-        unicode_symbol = '\u265B'  # black queens
+        unicode_symbol = '\u265B'
     else:
-        unicode_symbol = '\u2655'  # white queens
+        unicode_symbol = '\u2655'
     for i in range(1, board_size + 1):
         string_row, division = '|', ' '
         for j in range(board_size):
@@ -64,10 +63,10 @@ def print_board(individual, black=True):
                 string_row += ' ' + unicode_symbol + ' |'
             else:
                 string_row += '   |'
-                division += '+---'
+            division += '+---'
         division += '+'
         print(division, '\n', string_row)
-    print(division, '\n\n')
+    print(division)
 
 
 def fitness(individual):
