@@ -13,7 +13,7 @@ queens = [4, 5, 10, 15, 20, 25, 30, 40, 50]
 
 def graph(test_df):
     """Graficando para cada reina tiempo promedio de ejecución sobre iteraciones promedio."""
-    palette = sns.color_palette('magma', len(pop_sizes))
+    palette = sns.color_palette('magma', len(sequential_pop_sizes))
     for queen in queens:
         temp_df = test_df.loc[test_df.num_reinas == queen].copy()
         temp_df.drop(columns=['num_reinas'], inplace=True)
@@ -21,12 +21,13 @@ def graph(test_df):
         plt.ylabel('Número de iteraciones promedio')
         plt.xlabel('Tiempo promedio de ejecución [s]')
         plt.title('Tiempo promedio de ejecución contra número de iteraciones promedio')
+        plt.tight_layout()
         plt.savefig('graphs/iter_tiempo_' +
-                    str(queen) + '.png')
+                    str(queen) + '.png', bbox_inches='tight')
         plt.show()
 
     """Graficando para cada reina tamaño de población sobre tiempo promedio de ejecución"""
-    palette = sns.color_palette('flare', len(pop_sizes))
+    palette = sns.color_palette('flare', len(sequential_pop_sizes))
     df = test_df.drop(columns=['iter_avg'])
     for queen in queens:
         temp_df = df.loc[df.num_reinas == queen]
@@ -35,7 +36,7 @@ def graph(test_df):
         plt.xlabel('Tiempo promedio de ejecución [s]')
         plt.title('Tiempo promedio de ejecución contra población para ' + str(queen) + ' reinas')
         plt.savefig('graphs/tiempo_tam_' +
-                    str(queen) + '.png')
+                    str(queen) + '.png', bbox_inches='tight')
         plt.show()
 
     """Graficando para cada reina tamaño de población sobre iteraciones promedio de ejecución"""
@@ -47,7 +48,7 @@ def graph(test_df):
         plt.xlabel('Iteraciones promedio')
         plt.title('Iteraciones promedio contra población para ' + str(queen) + ' reinas')
         plt.savefig('graphs/iter_tam_' +
-                    str(queen) + '.png')
+                    str(queen) + '.png', bbox_inches='tight')
         plt.show()
 
     palette = sns.color_palette('mako', len(queens))
@@ -57,7 +58,7 @@ def graph(test_df):
     plt.xlabel('Tamaño de población')
     plt.ylabel('Tiempo promedio de ejecución [s]')
     plt.title('Tiempo promedio de ejecución contra población')
-    plt.savefig('graphs/tam_tiempo.png')
+    plt.savefig('graphs/tam_tiempo.png', bbox_inches='tight')
     plt.show()
 
     temp_df['tiempo_avg'] = np.log(temp_df['tiempo_avg'])
@@ -67,7 +68,7 @@ def graph(test_df):
     plt.xlabel('Tamaño de población')
     plt.ylabel('Tiempo promedio de ejecución [s]')
     plt.title('Tiempo promedio de ejecución contra población — log')
-    plt.savefig('graphs/tam_tiempo_log.png')
+    plt.savefig('graphs/tam_tiempo_log.png', bbox_inches='tight')
     plt.show()
 
     temp_df = test_df.drop(columns=['tiempo_avg'])
@@ -76,7 +77,7 @@ def graph(test_df):
     plt.xlabel('Tamaño de población')
     plt.ylabel('Número de iteraciones promedio')
     plt.title('Número de iteraciones promedio contra población')
-    plt.savefig('graphs/tam_iter.png')
+    plt.savefig('graphs/tam_iter.png', bbox_inches='tight')
     plt.show()
 
     temp_df['iter_avg'] = np.log(temp_df['iter_avg'])
@@ -86,7 +87,7 @@ def graph(test_df):
     plt.xlabel('Tamaño de población')
     plt.ylabel('Número de iteraciones promedio')
     plt.title('Número de iteraciones promedio contra población — log')
-    plt.savefig('graphs/tam_iter_log.png')
+    plt.savefig('graphs/tam_iter_log.png', bbox_inches='tight')
     plt.show()
 
 
@@ -106,10 +107,11 @@ def speedup(seq_df, con_df, seq_pop_sizes, con_pop_sizes):
     plt.xlabel('Número de reinas')
     plt.ylabel('Speedup')
     plt.title('Speedup con base en el número de reinas y tamaño de población')
-    plt.savefig('graphs/speedup_seg.png')
+    plt.savefig('graphs/speedup_seg.png', bbox_inches='tight')
     plt.show()
     df.to_csv('data/output.csv')
     return 1
 
 
+graph(concurrent_df)
 speedup(sequential_df, concurrent_df, sequential_pop_sizes, concurrent_pop_sizes)
