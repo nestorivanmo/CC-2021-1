@@ -3,14 +3,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
-run_df = pd.read_csv('output.csv')
+run_df = pd.read_csv('data/output_parallel.csv')
 run_df.head()
 
-pop_sizes = [5, 10, 15, 20, 30, 40, 60, 100]
+pop_sizes = [20, 30, 40, 60, 100, 400, 1000]
 queens = [4, 5, 10, 15, 20, 25, 30, 40, 50]
 
 """Graficando para cada reina tiempo promedio de ejecución sobre iteraciones promedio."""
-palette = sns.color_palette('magma', 8)
+palette = sns.color_palette('magma', len(pop_sizes))
 for queen in queens:
     temp_df = run_df.loc[run_df.num_reinas == queen].copy()
     temp_df.drop(columns=['num_reinas'], inplace=True)
@@ -23,7 +23,7 @@ for queen in queens:
     plt.show()
 
 """Graficando para cada reina tamaño de población sobre tiempo promedio de ejecución"""
-palette = sns.color_palette('flare', 8)
+palette = sns.color_palette('flare', len(pop_sizes))
 df = run_df.drop(columns=['iter_avg'])
 for queen in queens:
     temp_df = df.loc[df.num_reinas == queen]
@@ -49,7 +49,7 @@ for queen in queens:
 
 
 
-palette = sns.color_palette('mako', 9)
+palette = sns.color_palette('mako', len(queens))
 temp_df = run_df.drop(columns=['iter_avg'])
 g = sns.lineplot(x='tam_pob', y='tiempo_avg', data=temp_df, hue='num_reinas', style='num_reinas', markers=True,
                  dashes=False, palette=palette)
